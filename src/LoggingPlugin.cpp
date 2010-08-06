@@ -287,6 +287,8 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
   // Group: Wheels
   for( long i = 0; i < kNumberOfWheels; ++i ) {
     const TelemWheelV2 &wheel = info.mWheel[i];
+    LoggingPlugin::Session->GetChannel(kChannelSuspensionDeflection, kWheels[i])
+      .GetDataBuffer().Write(wheel.mSuspensionDeflection);
     LoggingPlugin::Session->GetChannel(kChannelRotation, kWheels[i])
       .GetDataBuffer().Write(-wheel.mRotation);
     LoggingPlugin::Session->GetChannel(kChannelRotation, kWheels[i])
