@@ -1,26 +1,33 @@
-/*******************************************************************************
- * Martin Galpin (m@66laps.com)
- *
- * Copyright (c) 2010 66laps Limited.
- *
- * All rights reserved.
- *
- * This file is part of rFactor-OpenMotorsport.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
- ******************************************************************************/
+/*
+  Martin Galpin (m@66laps.com)
+  
+  Copyright (c) 2010 66laps Limited. All rights reserved.
+  
+  This file is part of rFactor-OpenMotorsport.
+  
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+#include "LoggingPlugin.hpp"
+#include "OpenMotorsport.hpp"
+#include "ChannelDefinitions.hpp"
+#include "Configuration.hpp"
+
+#include <math.h>
+#include <windows.h>
+#include <sstream>
+
 /*
 A few notes on when we start logging data.
 
@@ -69,14 +76,6 @@ displays a third sector time in-game, this is not exposed in the API.
 5. Sector times are relative from the start of a lap (t > s2 > s1) and not
 relative to each other (as shown in game).
 */
-#include "LoggingPlugin.hpp"
-#include "OpenMotorsport.hpp"
-#include "ChannelDefinitions.hpp"
-#include "Configuration.hpp"
-
-#include <math.h>
-#include <windows.h>
-#include <sstream>
 
 // Constants for the ScoringInfoV2.mGamePhases (see InternalsPlugin.hpp)
 #define kGamePhaseNotEnteredGame 10
