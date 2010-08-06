@@ -40,11 +40,11 @@
 
 namespace OpenMotorsport 
 {
-  Session::Session() : 
-    mNumSectors(kSessionNoSectors), 
+  Session::Session() :
+    mNumSectors(kSessionNoSectors),
     mVehicleCategory(kSessionNoVehicleCategory),
     mFullName(kSessionNoUser),
-    mTrackName(kSessionNoTrackName), 
+    mTrackName(kSessionNoTrackName),
     mVehicleName(kSessionNoVehicleName),
     mDataSource(kSessionNoDataSource)
   {
@@ -65,15 +65,15 @@ namespace OpenMotorsport
     
     zf = zipOpen(fileName.c_str(), APPEND_STATUS_CREATE);
     if(zf == NULL) {
-      throw "Failed to open OpenMotorsport file writing."; 
+      throw "Failed to open OpenMotorsport file writing.";
     }
 
     // write the meta.xml to the ZIP file
     std::string metaXml = _writeMetaXml();
-    error = zipWriteNewFile(zf, "meta.xml", mDate, 
+    error = zipWriteNewFile(zf, "meta.xml", mDate,
         metaXml.c_str(), metaXml.size());
     if(error != ZIP_OK) {
-      throw "Failed to write OpenMotorsport/meta.xml."; 
+      throw "Failed to write OpenMotorsport/meta.xml.";
     }
 
     // write channel data to ZIP file
@@ -83,12 +83,12 @@ namespace OpenMotorsport
       Channel& channel = it->second;
       
       char dataFileName[MAX_PATH];
-      sprintf(dataFileName, "data/%d.bin", channel.GetId()); 
+      sprintf(dataFileName, "data/%d.bin", channel.GetId());
 
-      error = zipWriteNewFile(zf, dataFileName, mDate, 
+      error = zipWriteNewFile(zf, dataFileName, mDate,
         channel.GetDataBuffer().GetBytes(), channel.GetDataBuffer().GetSize());
       if(error != ZIP_OK) {
-        throw "Failed to write channel data."; 
+        throw "Failed to write channel data.";
       }
     }
 
@@ -137,58 +137,58 @@ namespace OpenMotorsport
 
   std::string Session::_writeMetaXml()
   {
-    TiXmlDocument doc;  
+    TiXmlDocument doc;
     TiXmlElement* node;
-    TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "", "");  
-    doc.LinkEndChild(decl);  
+    TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "", "");
+    doc.LinkEndChild(decl);
 
     TiXmlElement* root = new TiXmlElement("openmotorsport");
     root->SetAttribute("xmlns", kXmlBaseNamespace);
     doc.LinkEndChild(root);
 
     // write basic <metadata>
-    TiXmlElement* metadata = new TiXmlElement("metadata");  
+    TiXmlElement* metadata = new TiXmlElement("metadata");
     root->LinkEndChild(metadata);  
 
-    node = new TiXmlElement("user");  
-    node->LinkEndChild(new TiXmlText(this->mFullName.c_str()));  
+    node = new TiXmlElement("user");
+    node->LinkEndChild(new TiXmlText(this->mFullName.c_str()));
     metadata->LinkEndChild(node);
 
     // write vehicle name (and optional category)
     TiXmlElement* vehicle = new TiXmlElement("vehicle");
     metadata->LinkEndChild(vehicle);
     node = new TiXmlElement("name");  
-    node->LinkEndChild(new TiXmlText(this->mVehicleName.c_str()));  
+    node->LinkEndChild(new TiXmlText(this->mVehicleName.c_str()));
     vehicle->LinkEndChild(node);
 
     if(this->mVehicleCategory != kSessionNoVehicleCategory) {
-      node = new TiXmlElement("category");  
-      node->LinkEndChild(new TiXmlText(this->mVehicleCategory.c_str()));  
+      node = new TiXmlElement("category");
+      node->LinkEndChild(new TiXmlText(this->mVehicleCategory.c_str()));
     }
 
     TiXmlElement* venue = new TiXmlElement("venue");
     metadata->LinkEndChild(venue);
-    node = new TiXmlElement("name");  
-    node->LinkEndChild(new TiXmlText(this->mTrackName.c_str()));  
+    node = new TiXmlElement("name");
+    node->LinkEndChild(new TiXmlText(this->mTrackName.c_str()));
     venue->LinkEndChild(node);
 
-    node = new TiXmlElement("date");  
-    node->LinkEndChild(new TiXmlText(this->GetISO8601Date().c_str()));  
+    node = new TiXmlElement("date");
+    node->LinkEndChild(new TiXmlText(this->GetISO8601Date().c_str()));
     metadata->LinkEndChild(node);
 
-    node = new TiXmlElement("datasource");  
-    node->LinkEndChild(new TiXmlText(this->mDataSource.c_str()));  
+    node = new TiXmlElement("datasource");
+    node->LinkEndChild(new TiXmlText(this->mDataSource.c_str()));
     metadata->LinkEndChild(node);
 
     // write <channels>
-    TiXmlElement* channels = new TiXmlElement("channels");  
+    TiXmlElement* channels = new TiXmlElement("channels");
     root->LinkEndChild(channels);
 
     // for the channel/group hierachy map group names with a corresponding node
     std::tr1::unordered_map<std::string, TiXmlElement*> groupNodes;
 
     for(ChannelsMap::iterator it = this->mChannels.begin();
-      it != this->mChannels.end(); ++it) 
+      it != this->mChannels.end(); ++it)
     {
       Channel& channel = it->second;
       TiXmlElement* parent = channels;
@@ -205,7 +205,7 @@ namespace OpenMotorsport
     }
     
     // write <markers>
-    TiXmlElement* markers = new TiXmlElement("markers");  
+    TiXmlElement* markers = new TiXmlElement("markers");
     root->LinkEndChild(markers);
     if(this->mNumSectors != kSessionNoSectors)
       markers->SetAttribute("sectors", this->mNumSectors);
@@ -213,13 +213,13 @@ namespace OpenMotorsport
     for(MarkersList::iterator it = this->mMarkers.begin();
       it != this->mMarkers.end(); ++it)
     {
-      node = new TiXmlElement("marker");  
+      node = new TiXmlElement("marker");
       node->SetDoubleAttribute("time", *it);
       markers->LinkEndChild(node);
     }
     
     TiXmlPrinter printer;
-    printer.SetIndent( "\t" );
+    printer.SetIndent("\t");
     doc.Accept( &printer );
     return std::string(printer.CStr());
   }
@@ -230,23 +230,23 @@ namespace OpenMotorsport
     TiXmlElement* node;
     TiXmlElement* name;
 
-    node = new TiXmlElement("group");  
+    node = new TiXmlElement("group");
     parent->LinkEndChild(node);
      
-    name = new TiXmlElement("name");  
-    name->LinkEndChild(new TiXmlText(groupName.c_str()));  
+    name = new TiXmlElement("name");
+    name->LinkEndChild(new TiXmlText(groupName.c_str()));
     node->LinkEndChild(name);
 
     return node;
   }
 
-  void Session::_createChannelXmlNode(const OpenMotorsport::Channel& channel, 
+  void Session::_createChannelXmlNode(const OpenMotorsport::Channel& channel,
                                       TiXmlElement* parent) const
   {
     TiXmlElement* node;
     TiXmlElement* name;
 
-    node = new TiXmlElement("channel");  
+    node = new TiXmlElement("channel");
     parent->LinkEndChild(node);
     node->SetAttribute("id", channel.GetId());
     if(channel.GetUnits() != kChannelNoUnits) 
@@ -254,8 +254,8 @@ namespace OpenMotorsport
     if(channel.GetSampleInterval() != kChannelVariableSampleInterval) 
       node->SetAttribute("interval", channel.GetSampleInterval());
      
-    name = new TiXmlElement("name");  
-    name->LinkEndChild(new TiXmlText(channel.GetName().c_str()));  
+    name = new TiXmlElement("name");
+    name->LinkEndChild(new TiXmlText(channel.GetName().c_str()));
     node->LinkEndChild(name);
   }
 
@@ -264,16 +264,14 @@ namespace OpenMotorsport
   /* Definition of OpenMotorsport::Channel. */
   /****************************************************************************/
 
-  Channel::Channel(int id, const std::string name, long sampleInterval, 
+  Channel::Channel(int id, const std::string name, long sampleInterval,
     const std::string units, const std::string group)
-    : mId(id), mName(name), mSampleInterval(sampleInterval), 
+    : mId(id), mName(name), mSampleInterval(sampleInterval),
     mUnits(units), mGroup(group)
-  {
-  
-  }
+  {}
 
-  Channel::~Channel() {
-  }
+  Channel::~Channel() 
+  {}
 
   /****************************************************************************/
   /* Definition of OpenMotorsport::DataBuffer. */
@@ -285,8 +283,7 @@ namespace OpenMotorsport
   }
 
   DataBuffer::~DataBuffer()
-  {
-  }
+  {}
 
   void DataBuffer::Write(float value)
   {
