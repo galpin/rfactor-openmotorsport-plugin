@@ -1,7 +1,6 @@
 A plug-in for rFactor that logs telemetry in the OpenMotorsport format.
 
-Includes header files from the rFactor Internals API that are
-copyright (c) 1996-2007 Image Space Incorporated.
+Includes header files from the rFactor Internals API that are Copyright (c) 1996-2007 Image Space Incorporated.
 
 rFactor-openmotorsport is available under the terms of the LGPL (see LICENSE.txt).
 
