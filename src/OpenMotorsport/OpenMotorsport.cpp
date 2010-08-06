@@ -137,90 +137,87 @@ namespace OpenMotorsport
 
   std::string Session::_writeMetaXml()
   {
-	  TiXmlDocument doc;  
-	  TiXmlElement* node;
- 	  TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "", "");  
-	  doc.LinkEndChild(decl);  
-   
-	  TiXmlElement* root = new TiXmlElement("openmotorsport");
+    TiXmlDocument doc;  
+    TiXmlElement* node;
+    TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "", "");  
+    doc.LinkEndChild(decl);  
+
+    TiXmlElement* root = new TiXmlElement("openmotorsport");
     root->SetAttribute("xmlns", kXmlBaseNamespace);
-	  doc.LinkEndChild(root);
-   
+    doc.LinkEndChild(root);
+
     // write basic <metadata>
-	  TiXmlElement* metadata = new TiXmlElement("metadata");  
-	  root->LinkEndChild(metadata);  
-   
-	  node = new TiXmlElement("user");  
-	  node->LinkEndChild(new TiXmlText(this->mFullName.c_str()));  
-	  metadata->LinkEndChild(node);
+    TiXmlElement* metadata = new TiXmlElement("metadata");  
+    root->LinkEndChild(metadata);  
+
+    node = new TiXmlElement("user");  
+    node->LinkEndChild(new TiXmlText(this->mFullName.c_str()));  
+    metadata->LinkEndChild(node);
 
     // write vehicle name (and optional category)
     TiXmlElement* vehicle = new TiXmlElement("vehicle");
     metadata->LinkEndChild(vehicle);
-	  node = new TiXmlElement("name");  
-	  node->LinkEndChild(new TiXmlText(this->mVehicleName.c_str()));  
-	  vehicle->LinkEndChild(node);
+    node = new TiXmlElement("name");  
+    node->LinkEndChild(new TiXmlText(this->mVehicleName.c_str()));  
+    vehicle->LinkEndChild(node);
 
     if(this->mVehicleCategory != kSessionNoVehicleCategory) {
-	    node = new TiXmlElement("category");  
-	    node->LinkEndChild(new TiXmlText(this->mVehicleCategory.c_str()));  
+      node = new TiXmlElement("category");  
+      node->LinkEndChild(new TiXmlText(this->mVehicleCategory.c_str()));  
     }
 
     TiXmlElement* venue = new TiXmlElement("venue");
     metadata->LinkEndChild(venue);
-	  node = new TiXmlElement("name");  
-	  node->LinkEndChild(new TiXmlText(this->mTrackName.c_str()));  
-	  venue->LinkEndChild(node);
-    
-	  node = new TiXmlElement("date");  
-	  node->LinkEndChild(new TiXmlText(this->GetISO8601Date().c_str()));  
-	  metadata->LinkEndChild(node);
+    node = new TiXmlElement("name");  
+    node->LinkEndChild(new TiXmlText(this->mTrackName.c_str()));  
+    venue->LinkEndChild(node);
+
+    node = new TiXmlElement("date");  
+    node->LinkEndChild(new TiXmlText(this->GetISO8601Date().c_str()));  
+    metadata->LinkEndChild(node);
 
     node = new TiXmlElement("datasource");  
     node->LinkEndChild(new TiXmlText(this->mDataSource.c_str()));  
-	  metadata->LinkEndChild(node);
+    metadata->LinkEndChild(node);
 
     // write <channels>
-	  TiXmlElement* channels = new TiXmlElement("channels");  
-	  root->LinkEndChild(channels);
+    TiXmlElement* channels = new TiXmlElement("channels");  
+    root->LinkEndChild(channels);
 
     // for the channel/group hierachy map group names with a corresponding node
     std::tr1::unordered_map<std::string, TiXmlElement*> groupNodes;
 
     for(ChannelsMap::iterator it = this->mChannels.begin();
-      it != this->mChannels.end(); ++it)
+      it != this->mChannels.end(); ++it) 
     {
       Channel& channel = it->second;
       TiXmlElement* parent = channels;
 
-      if(channel.GetGroup() != kChannelNoGroup)
-      {
+      if(channel.GetGroup() != kChannelNoGroup) {
         // create a new group node if this key doe not already exist
-        if(!MAP_HAS_KEY(groupNodes, channel.GetGroup()))
-        {
+        if(!MAP_HAS_KEY(groupNodes, channel.GetGroup())) {
           groupNodes[channel.GetGroup()] 
             = _createGroupXmlNode(channel.GetGroup(), channels);
         }
         parent = groupNodes[channel.GetGroup()];
       }
-
       _createChannelXmlNode(channel, parent);
     }
-
+    
     // write <markers>
-	  TiXmlElement* markers = new TiXmlElement("markers");  
-	  root->LinkEndChild(markers);
+    TiXmlElement* markers = new TiXmlElement("markers");  
+    root->LinkEndChild(markers);
     if(this->mNumSectors != kSessionNoSectors)
       markers->SetAttribute("sectors", this->mNumSectors);
-    
+
     for(MarkersList::iterator it = this->mMarkers.begin();
       it != this->mMarkers.end(); ++it)
     {
-	    node = new TiXmlElement("marker");  
-	    node->SetDoubleAttribute("time", *it);
-	    markers->LinkEndChild(node);
+      node = new TiXmlElement("marker");  
+      node->SetDoubleAttribute("time", *it);
+      markers->LinkEndChild(node);
     }
-
+    
     TiXmlPrinter printer;
     printer.SetIndent( "\t" );
     doc.Accept( &printer );
