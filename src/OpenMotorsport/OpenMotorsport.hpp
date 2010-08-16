@@ -194,7 +194,7 @@ namespace OpenMotorsport
      *
      * @param The marker time in milliseconds from the start of the Session.
      */
-    void AddMarker(float marker);
+    void AddMarker(int marker);
 
     /**
      * Adds a new marker to this channel using a time relative to the lap of a
@@ -204,7 +204,7 @@ namespace OpenMotorsport
      *
      * @param The marker time in milliseconds relative to the start of the lap.
      */
-    void AddRelativeMarker(float marker);
+    void AddRelativeMarker(int marker);
 
     /**
      * Write this session to an OpenMotorsport file at the given path.
@@ -301,7 +301,7 @@ namespace OpenMotorsport
   
   private:
     typedef std::tr1::unordered_map<std::string, OpenMotorsport::Channel> ChannelsMap;
-    typedef std::vector<float> MarkersList;
+    typedef std::vector<int> MarkersList;
     
     ChannelsMap mChannels;
     MarkersList mMarkers;

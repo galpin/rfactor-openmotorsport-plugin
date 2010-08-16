@@ -121,6 +121,9 @@ relative to each other (as shown in game).
 #define SPEED_MPS(v) sqrtf( (v.x * v.x) + (v.y * v.y) + (v.z * v.z));
 #define RAD_TO_DEG(x)  x * 57.296f;
 
+// Convert sectors to milliseconds
+#define SEC_TO_MS(x) x * 1000
+
 /****************************************************************************/
 /* LoggingPlugin definition.                                                */
 /****************************************************************************/
@@ -204,7 +207,16 @@ void LoggingPlugin::saveSession()
   path << "\\";
   path << formatFileName(mConfiguration->GetString(kConfigurationFilename), 
     LoggingPlugin::Session);
-  LoggingPlugin::Session->Write(path.str());
+
+  FILE* fo = fopen("error_log.txt", "a");
+  fprintf(fo, "writing file. deque contains %d elements.\n", LoggingPlugin::DataQueue->size());
+  try {
+    LoggingPlugin::Session->Write(path.str());
+  }
+  catch (const char* e) {
+    fprintf(fo, "Exception when attempting to write file: %s\n", e);
+  }
+  fclose(fo);
 }
 
 DWORD WINAPI LoggingPlugin::LoggingThread(LPVOID lpParam) 
@@ -398,24 +410,28 @@ void LoggingPlugin::saveSectorTime(const ScoringInfoV2& info,
     case kSectorsSector1:
       if(vinfo.mLastLapTime > 0)
         LoggingPlugin::Session->
-          AddRelativeMarker(vinfo.mLastLapTime - vinfo.mLastSector2);
+          AddRelativeMarker(SEC_TO_MS((vinfo.mLastLapTime - vinfo.mLastSector2)));
       else
-        LoggingPlugin::Session->AddMarker(vinfo.mLapStartET);
+        LoggingPlugin::Session->AddMarker(SEC_TO_MS(vinfo.mLapStartET));
     break;
     
     case kSectorsSector2:
       if(vinfo.mCurSector1 > 0)
-        LoggingPlugin::Session->AddRelativeMarker(vinfo.mCurSector1);
+        LoggingPlugin::Session->AddRelativeMarker(SEC_TO_MS(vinfo.mCurSector1));
       else
-        LoggingPlugin::Session->AddMarker(info.mCurrentET - vinfo.mLapStartET);
+        LoggingPlugin::Session->AddMarker(
+          SEC_TO_MS((info.mCurrentET - vinfo.mLapStartET))
+        );
     break;
 
     case kSectorsSector3:
       if(vinfo.mCurSector2 > 0)
         LoggingPlugin::Session->
-          AddRelativeMarker(vinfo.mCurSector2 - vinfo.mCurSector1);
+          AddRelativeMarker(SEC_TO_MS((vinfo.mCurSector2 - vinfo.mCurSector1)));
       else
-        LoggingPlugin::Session->AddMarker(info.mCurrentET - vinfo.mLapStartET);
+        LoggingPlugin::Session->AddMarker(
+          SEC_TO_MS((info.mCurrentET - vinfo.mLapStartET))
+        );
     break;
   }
 }

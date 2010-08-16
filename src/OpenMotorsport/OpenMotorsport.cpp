@@ -111,12 +111,12 @@ namespace OpenMotorsport
     mChannels.insert(ChannelsMap::value_type(key, channel));
   }
 
-  void Session::AddMarker(float marker)
+  void Session::AddMarker(int marker)
   { 
     mMarkers.push_back(marker); 
   }
 
-  void Session::AddRelativeMarker(float marker)
+  void Session::AddRelativeMarker(int marker)
   { 
     if(mMarkers.size() < 1)
       mMarkers.push_back(marker); // no need to adjust as there is no previous
