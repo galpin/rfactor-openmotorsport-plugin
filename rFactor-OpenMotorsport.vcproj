@@ -49,7 +49,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;C:\Users\galpin\rFactor-OpenMotorsport\Win32\src\OpenMotorsport&quot;;&quot;C:\Users\galpin\rFactor-OpenMotorsport\Win32\src\TinyXml&quot;;&quot;C:\Users\galpin\rFactor-OpenMotorsport\Win32\src\MiniZip&quot;"
+				AdditionalIncludeDirectories="&quot;C:\66laps\rfactor-openmotorsport-plugin\src\OpenMotorsport&quot;;&quot;C:\66laps\rfactor-openmotorsport-plugin\src\TinyXml&quot;;&quot;C:\66laps\rfactor-openmotorsport-plugin\src\MiniZip&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;INTERNALSPLUGIN_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
