@@ -632,7 +632,7 @@ void LoggingPlugin::CreateLoggingSession()
   );
 
   // Group: Wheels
-  for( long i = 0; i < 4; ++i )
+  for( long i = 0; i < kNumberOfWheels; ++i )
   {
     LoggingPlugin::Session->AddChannel(
       OpenMotorsport::Channel(
