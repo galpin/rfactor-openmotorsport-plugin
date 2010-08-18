@@ -302,8 +302,6 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
       .GetDataBuffer().Write(wheel.mSuspensionDeflection);
     LoggingPlugin::Session->GetChannel(kChannelRotation, kWheels[i])
       .GetDataBuffer().Write(-wheel.mRotation);
-    LoggingPlugin::Session->GetChannel(kChannelRotation, kWheels[i])
-      .GetDataBuffer().Write(wheel.mSuspensionDeflection);
     LoggingPlugin::Session->GetChannel(kChannelRideHeight, kWheels[i])
       .GetDataBuffer().Write(wheel.mRideHeight);
     LoggingPlugin::Session->GetChannel(kChannelTireLoad, kWheels[i])
