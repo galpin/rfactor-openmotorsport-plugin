@@ -66,7 +66,7 @@
 #define kGroupWheelRF "Wheel RF"
 #define kGroupWheelRR "Wheel RR"
 #define kGroupWheelLF "Wheel LF"
-#define kGroupWheelLR "Wheel RF"
+#define kGroupWheelLR "Wheel LR"
 
 #define kChannelRotation "Rotation"
 #define kChannelSuspensionDeflection "Suspension Deflection"
