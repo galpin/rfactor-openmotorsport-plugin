@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<configuration>
+  <!-- 
+    Default sample interval is 200 milliseconds or 5Hz. If anything, go slower.
+  -->
+  <option key="SamplingInterval" value="200" />
+  
+  <!--
+    Default output directory.
+  -->
+  <option key="OutputDirectory" value=".\UserData\LOG\OpenMotorsport\" />
+  
+  <!--
+    Filename can use the following specifiers:
+      %Y - year (e.g. 2010)
+      %M - month (e.g. 08)
+      %D - day (e.g. 20)
+      %H - hour (e.g 09)
+      %M - minute (e.g. 20)
+      %d - player name (e.g. Michael Schumacher)
+      %t - track name (e.g. Toban Raceway)
+      %c - vehicle name (e.g. rF3)
+   
+    The default format allows for natural ordering by filename.
+  -->
+  <option key="Filename" value="%Y%M%D%H%M_%d_%c_%t.om" />  
+</configuration>
