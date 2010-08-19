@@ -107,7 +107,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="C:\66laps\rfactor-openmotorsport\scripts\copy.bat"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
