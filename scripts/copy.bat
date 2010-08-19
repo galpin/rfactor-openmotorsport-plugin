@@ -1,0 +1,1 @@
+copy ..\Release\rFactorOpenMotorsport.dll "C:\Program Files\rFactor\Plugins\"
