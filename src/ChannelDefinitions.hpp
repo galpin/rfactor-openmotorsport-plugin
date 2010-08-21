@@ -40,16 +40,16 @@
 #define kUnitsPascal "pa"
 
 #define kGroupPosition "Position"
-
 #define kChannelSpeed "Speed"
-#define kChannelAccelerationX "Acceleration X"
-#define kChannelAccelerationY "Acceleration Y"
-#define kChannelAccelerationZ "Acceleration Z"
 #define kChannelPitch "Pitch"
 #define kChannelRoll "Roll"
 
-#define kGroupDriver "Driver"
+#define kGroupAcceleration "Acceleration"
+#define kChannelAccelerationX "Acceleration X"
+#define kChannelAccelerationY "Acceleration Y"
+#define kChannelAccelerationZ "Acceleration Z"
 
+#define kGroupDriver "Driver"
 #define kChannelGear "Gear"
 #define kChannelThrottle "Throttle"
 #define kChannelBrake "Brake"
@@ -57,7 +57,6 @@
 #define kChannelSteering "Steering"
 
 #define kGroupEngine "Engine"
-
 #define kChannelRPM "RPM"
 #define kChannelClutchRPM "Clutch RPM"
 #define kChannelFuel "Fuel"
