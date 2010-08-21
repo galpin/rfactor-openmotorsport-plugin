@@ -99,6 +99,9 @@ relative to each other (as shown in game).
 #define kSectorsSector2 2
 #define kSectorsSector3 0
 
+// Constant for an outlap
+#define kOutlap 0
+
 // Constant for the number of logged sectors
 #define krFactorNumberOfSectors 2
 
@@ -128,7 +131,6 @@ relative to each other (as shown in game).
 /****************************************************************************/
 /* LoggingPlugin definition.                                                */
 /****************************************************************************/
-
 
 // Plug-in lifecycle methods
 void LoggingPlugin::Startup()
@@ -165,7 +167,6 @@ void LoggingPlugin::startLogging(const TelemInfoV2 &info)
 {
   mCurrentSector = kSectorsSector1;
   mSavedMetaData = false;
-  mCurrentLapET = 0.0f;
   mTotalElapsed = 0.0f;
   mFirstLapET = 0.0f;
   mEnterLapNumber = info.mLapNumber;

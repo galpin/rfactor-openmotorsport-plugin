@@ -108,7 +108,6 @@ public:
 
 private:
   // Maintaining the game state between the Scoring/Telemetry updates.
-  float mCurrentLapET;
   signed char mCurrentSector;
   unsigned char mEnterPhase;
   unsigned char mCurrentPhase;
