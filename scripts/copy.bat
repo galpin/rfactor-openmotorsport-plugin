@@ -1,1 +1,1 @@
-copy ..\Release\rFactorOpenMotorsport.dll "C:\Program Files\rFactor\Plugins\"
+copy ..\Release\rFactorOpenMotorsportPlugin.dll "C:\Program Files\rFactor\Plugins\"
