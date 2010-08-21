@@ -23,7 +23,7 @@
 #define _INTERNALS_EXAMPLE_H
 
 #include "InternalsPlugin.hpp"
-#include <deque>
+#include <string>
 
 namespace OpenMotorsport { class Session; }
 
@@ -88,33 +88,23 @@ public:
   PluginObjectProperty* GetProperty(const unsigned) { return 0; }
 
   /************** Static members for sampling. *******************/
-
-  /**
-   * A deque of telemetry blocks.
-   */
-  static std::deque<const TelemInfoV2>* DataQueue;
   
   /**
    * The current OpenMotorsport Session.
    */
-  static OpenMotorsport::Session* Session;
-  
-  /**
-   * The sampling thread.
-   */
-  static DWORD WINAPI LoggingThread(LPVOID lpParam);
+  OpenMotorsport::Session* mSession;
 
   /**
    * Saves a block of telemetry into the current session.
    *
    * @param info The instance of TelemInfoV2 to sample.
    */
-  static void SampleBlock(const TelemInfoV2& info);
+  void SampleBlock(const TelemInfoV2& info);
 
   /**
    * Creates a new instance of OpenMotorsport::Session.
    */
-  static void CreateLoggingSession();
+  void CreateLoggingSession();
 
 private:
   // Maintaining the game state between the Scoring/Telemetry updates.
@@ -122,14 +112,21 @@ private:
   signed char mCurrentSector;
   unsigned char mEnterPhase;
   unsigned char mCurrentPhase;
+  int mEnterLapNumber;
   bool mSavedMetaData;
+  bool mIsLogging;
 
   class Configuration* mConfiguration;
-  static int mSamplingInterval;
+  int mSamplingInterval;
+  float mSamplingIntervalSeconds;
+  float mTimeSinceLastSample;
+
+  float mTotalElapsed;
+  float mFirstLapET;
 
 private:
   void stopLogging();
-  void startLogging();
+  void startLogging(const TelemInfoV2 &info);
   void saveSession();
   bool isCurrentlyLogging();
   void saveSectorTime(const ScoringInfoV2& info,

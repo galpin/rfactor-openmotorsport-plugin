@@ -122,28 +122,25 @@ relative to each other (as shown in game).
 #define RAD_TO_DEG(x)  x * 57.296f;
 
 // Convert sectors to milliseconds
-#define SEC_TO_MS(x) x * 1000
+#define SEC_TO_MS(x) (int) x * 1000
+#define MS_TO_SEC(x) (float) x / 1000
 
 /****************************************************************************/
 /* LoggingPlugin definition.                                                */
 /****************************************************************************/
 
-// Static definitions
-OpenMotorsport::Session* LoggingPlugin::Session;
-std::deque<const TelemInfoV2>* LoggingPlugin::DataQueue;
-int LoggingPlugin::mSamplingInterval;
-
 
 // Plug-in lifecycle methods
 void LoggingPlugin::Startup()
 {
-  LoggingPlugin::DataQueue = NULL;
-  LoggingPlugin::Session = NULL;
+  mSession = NULL;
+  mIsLogging = false;
   mConfiguration = new Configuration();
   mConfiguration->Read();
   // cache sample interval to stop a lookup for every thread loop
-  LoggingPlugin::mSamplingInterval = 
+  mSamplingInterval = 
         mConfiguration->GetInt(kConfigurationSampleInterval);
+  mSamplingIntervalSeconds = MS_TO_SEC(mSamplingInterval);
 }
 
 void LoggingPlugin::Destroy()
@@ -164,39 +161,32 @@ void LoggingPlugin::ExitRealtime()
 }
 
 // Logging lifecycle methods
-void LoggingPlugin::startLogging()
+void LoggingPlugin::startLogging(const TelemInfoV2 &info)
 {
   mCurrentSector = kSectorsSector1;
   mSavedMetaData = false;
   mCurrentLapET = 0.0f;
+  mTotalElapsed = 0.0f;
+  mFirstLapET = 0.0f;
+  mEnterLapNumber = info.mLapNumber;
+  mTimeSinceLastSample = 0.0f;
+  mIsLogging = true;
 
-  LoggingPlugin::DataQueue = new std::deque<const TelemInfoV2>();
   LoggingPlugin::CreateLoggingSession();
-
-  DWORD dwThreadId;
-  HANDLE thread = CreateThread( 
-    NULL,                        // default security attributes
-    0,                           // use default stack size  
-    LoggingPlugin::LoggingThread, // thread function name
-    NULL,                        // argument to thread function 
-    0,                           // use default creation flags 
-    &dwThreadId
-    );
 }
 
 void LoggingPlugin::stopLogging()
 {
+  mIsLogging = false;
   saveSession();
-  LoggingPlugin::Session = NULL;
-  LoggingPlugin::DataQueue = NULL;
-  delete LoggingPlugin::Session;
-  delete LoggingPlugin::DataQueue;
+  mSession = NULL;
+  delete mSession;
   mEnterPhase = kGamePhaseNotEnteredGame;
 }
 
 bool LoggingPlugin::isCurrentlyLogging()
 {
-  return !(LoggingPlugin::DataQueue == NULL);
+  return mIsLogging;
 }
 
 void LoggingPlugin::saveSession()
@@ -206,38 +196,17 @@ void LoggingPlugin::saveSession()
   CreateDirectory(path.str().c_str(), NULL);
   path << "\\";
   path << formatFileName(mConfiguration->GetString(kConfigurationFilename), 
-    LoggingPlugin::Session);
+    mSession);
 
   FILE* fo = fopen("error_log.txt", "a");
-  fprintf(fo, "writing file. deque contains %d elements.\n", LoggingPlugin::DataQueue->size());
   try {
-    LoggingPlugin::Session->Write(path.str());
+    mSession->Write(path.str());
   }
   catch (const char* e) {
     fprintf(fo, "Exception when attempting to write file: %s\n", e);
   }
   fclose(fo);
 }
-
-DWORD WINAPI LoggingPlugin::LoggingThread(LPVOID lpParam) 
-{
-  while(true) {
-    // exit the thread if the DataQueue has been NULL'd
-    if(LoggingPlugin::DataQueue == NULL) 
-      return 0;
-
-    if(!LoggingPlugin::DataQueue->empty())  {
-      const TelemInfoV2 info = DataQueue->front();
-      DataQueue->pop_front();
-
-      LoggingPlugin::SampleBlock(info);
-    }
-
-    Sleep(LoggingPlugin::mSamplingInterval);
-  }
-
-  return 0;
-} 
 
 void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
 {
@@ -259,64 +228,66 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
   );
   roll = RAD_TO_DEG(roll);
 
-  // Group: Position
-  LoggingPlugin::Session->GetChannel(kChannelSpeed, kGroupPosition)
-    .GetDataBuffer().Write(MPS_TO_KPH(speed));
-  LoggingPlugin::Session->GetChannel(kChannelAccelerationX, kGroupPosition)
+  // Group: Acceleration
+  mSession->GetChannel(kChannelAccelerationX, kGroupAcceleration)
     .GetDataBuffer().Write(info.mLocalAccel.x);
-  LoggingPlugin::Session->GetChannel(kChannelAccelerationY, kGroupPosition)
+  mSession->GetChannel(kChannelAccelerationY, kGroupAcceleration)
     .GetDataBuffer().Write(info.mLocalAccel.y);
-  LoggingPlugin::Session->GetChannel(kChannelAccelerationZ, kGroupPosition)
+  mSession->GetChannel(kChannelAccelerationZ, kGroupAcceleration)
     .GetDataBuffer().Write(info.mLocalAccel.z);
-  LoggingPlugin::Session->GetChannel(kChannelPitch, kGroupPosition)
+
+  // Group: Position
+  mSession->GetChannel(kChannelSpeed, kGroupPosition)
+    .GetDataBuffer().Write(MPS_TO_KPH(speed));
+  mSession->GetChannel(kChannelPitch, kGroupPosition)
     .GetDataBuffer().Write(pitch);
-  LoggingPlugin::Session->GetChannel(kChannelRoll, kGroupPosition).
+  mSession->GetChannel(kChannelRoll, kGroupPosition).
     GetDataBuffer().Write(roll);
 
   // Group: Driver
-  LoggingPlugin::Session->GetChannel(kChannelGear, kGroupDriver)
+  mSession->GetChannel(kChannelGear, kGroupDriver)
     .GetDataBuffer().Write(float(info.mGear));
-  LoggingPlugin::Session->GetChannel(kChannelThrottle, kGroupDriver)
+  mSession->GetChannel(kChannelThrottle, kGroupDriver)
     .GetDataBuffer().Write(RANGE_TO_PERCENT(info.mUnfilteredThrottle));
-  LoggingPlugin::Session->GetChannel(kChannelBrake, kGroupDriver)
+  mSession->GetChannel(kChannelBrake, kGroupDriver)
     .GetDataBuffer().Write(RANGE_TO_PERCENT(info.mUnfilteredBrake));
-  LoggingPlugin::Session->GetChannel(kChannelClutch, kGroupDriver)
+  mSession->GetChannel(kChannelClutch, kGroupDriver)
     .GetDataBuffer().Write(RANGE_TO_PERCENT(info.mUnfilteredClutch));
-  LoggingPlugin::Session->GetChannel(kChannelSteering, kGroupDriver)
+  mSession->GetChannel(kChannelSteering, kGroupDriver)
     .GetDataBuffer().Write(RANGE_TO_PERCENT(info.mUnfilteredSteering));
 
   // Group: Engine
-  LoggingPlugin::Session->GetChannel(kChannelRPM, kGroupEngine)
+  mSession->GetChannel(kChannelRPM, kGroupEngine)
     .GetDataBuffer().Write(info.mEngineRPM);
-  LoggingPlugin::Session->GetChannel(kChannelClutchRPM, kGroupEngine)
+  mSession->GetChannel(kChannelClutchRPM, kGroupEngine)
     .GetDataBuffer().Write(info.mClutchRPM);
-  LoggingPlugin::Session->GetChannel(kChannelFuel, kGroupEngine)
+  mSession->GetChannel(kChannelFuel, kGroupEngine)
     .GetDataBuffer().Write(info.mFuel);
-  LoggingPlugin::Session->GetChannel(kChannelOverheating, kGroupEngine)
+  mSession->GetChannel(kChannelOverheating, kGroupEngine)
     .GetDataBuffer().Write(BOOL_TO_FLOAT(info.mOverheating));
 
   // Group: Wheels
   for( long i = 0; i < kNumberOfWheels; ++i ) {
     const TelemWheelV2 &wheel = info.mWheel[i];
-    LoggingPlugin::Session->GetChannel(kChannelSuspensionDeflection, kWheels[i])
+    mSession->GetChannel(kChannelSuspensionDeflection, kWheels[i])
       .GetDataBuffer().Write(wheel.mSuspensionDeflection);
-    LoggingPlugin::Session->GetChannel(kChannelRotation, kWheels[i])
+    mSession->GetChannel(kChannelRotation, kWheels[i])
       .GetDataBuffer().Write(-wheel.mRotation);
-    LoggingPlugin::Session->GetChannel(kChannelRideHeight, kWheels[i])
+    mSession->GetChannel(kChannelRideHeight, kWheels[i])
       .GetDataBuffer().Write(wheel.mRideHeight);
-    LoggingPlugin::Session->GetChannel(kChannelTireLoad, kWheels[i])
+    mSession->GetChannel(kChannelTireLoad, kWheels[i])
       .GetDataBuffer().Write(wheel.mTireLoad);
-    LoggingPlugin::Session->GetChannel(kChannelLateralForce, kWheels[i])
+    mSession->GetChannel(kChannelLateralForce, kWheels[i])
       .GetDataBuffer().Write(wheel.mLateralForce);
-    LoggingPlugin::Session->GetChannel(kChannelBrakeTemperature, kWheels[i])
+    mSession->GetChannel(kChannelBrakeTemperature, kWheels[i])
       .GetDataBuffer().Write(wheel.mBrakeTemp);
-    LoggingPlugin::Session->GetChannel(kChannelPressure, kWheels[i])
+    mSession->GetChannel(kChannelPressure, kWheels[i])
       .GetDataBuffer().Write(wheel.mPressure);
-    LoggingPlugin::Session->GetChannel(kChannelTemperatureLeft, kWheels[i])
+    mSession->GetChannel(kChannelTemperatureLeft, kWheels[i])
       .GetDataBuffer().Write(wheel.mTemperature[kWheelTemperatureLeft]);
-    LoggingPlugin::Session->GetChannel(kChannelTemperatureCenter, kWheels[i])
+    mSession->GetChannel(kChannelTemperatureCenter, kWheels[i])
       .GetDataBuffer().Write(wheel.mTemperature[kWheelTemperatureCenter]);
-    LoggingPlugin::Session->GetChannel(kChannelTemperatureRight, kWheels[i])
+    mSession->GetChannel(kChannelTemperatureRight, kWheels[i])
       .GetDataBuffer().Write(wheel.mTemperature[kWheelTemperatureRight]);
   }
 }
@@ -334,7 +305,7 @@ void LoggingPlugin::UpdateTelemetry( const TelemInfoV2 &info )
       case kGamePhaseBeforeSession:
       case kGamePhaseGreenFlag:
       case kGamePhaseFullCourseYellow:
-        startLogging();
+        startLogging(info);
         break;
     }
   }
@@ -342,14 +313,27 @@ void LoggingPlugin::UpdateTelemetry( const TelemInfoV2 &info )
   // Check if we should start logging now
   if(!isCurrentlyLogging()) {
     if(mCurrentPhase >= kGamePhaseGreenFlag && info.mLapStartET > 0) {
-      startLogging();        
+      startLogging(info);        
     } else {
       return;
     }
   }
 
-  // Put this telemetry update on the front of the queue.
-  LoggingPlugin::DataQueue->push_front(info);
+  // We get the ET of the out lap by looking for when the lap number
+  // increases. All other lap times after now handled by scoring.
+  if(info.mLapNumber > mEnterLapNumber && mFirstLapET == 0.0f) {
+    mFirstLapET = mTotalElapsed;
+    mSession->AddMarker(SEC_TO_MS(mFirstLapET));
+  }
+
+  // Check if we should sample yet.
+  if(mTimeSinceLastSample >= mSamplingIntervalSeconds) {
+    SampleBlock(info);
+    mTimeSinceLastSample = 0.0f;
+  }
+
+  mTotalElapsed += info.mDeltaTime;
+  mTimeSinceLastSample += info.mDeltaTime;
 }
 
 // Scoring updates from InternalsPluginV3
@@ -407,28 +391,26 @@ void LoggingPlugin::saveSectorTime(const ScoringInfoV2& info,
   switch(mCurrentSector) {
     case kSectorsSector1:
       if(vinfo.mLastLapTime > 0)
-        LoggingPlugin::Session->
+        mSession->
           AddRelativeMarker(SEC_TO_MS((vinfo.mLastLapTime - vinfo.mLastSector2)));
-      else
-        LoggingPlugin::Session->AddMarker(SEC_TO_MS(vinfo.mLapStartET));
     break;
     
     case kSectorsSector2:
       if(vinfo.mCurSector1 > 0)
-        LoggingPlugin::Session->AddRelativeMarker(SEC_TO_MS(vinfo.mCurSector1));
+        mSession->AddRelativeMarker(SEC_TO_MS(vinfo.mCurSector1));
       else
-        LoggingPlugin::Session->AddMarker(
-          SEC_TO_MS((info.mCurrentET - vinfo.mLapStartET))
+        mSession->AddMarker(
+          SEC_TO_MS(mTotalElapsed)
         );
     break;
 
     case kSectorsSector3:
       if(vinfo.mCurSector2 > 0)
-        LoggingPlugin::Session->
+        mSession->
           AddRelativeMarker(SEC_TO_MS((vinfo.mCurSector2 - vinfo.mCurSector1)));
       else
-        LoggingPlugin::Session->AddMarker(
-          SEC_TO_MS((info.mCurrentET - vinfo.mLapStartET))
+        mSession->AddMarker(
+          SEC_TO_MS(mTotalElapsed)
         );
     break;
   }
@@ -436,12 +418,12 @@ void LoggingPlugin::saveSectorTime(const ScoringInfoV2& info,
 
 void LoggingPlugin::saveMetadata(const ScoringInfoV2& info,
                                  const VehicleScoringInfoV2& vinfo) {
-  LoggingPlugin::Session->SetUser(vinfo.mDriverName);
-  LoggingPlugin::Session->SetVehicle(vinfo.mVehicleName);
-  LoggingPlugin::Session->SetTrack(info.mTrackName);
-  LoggingPlugin::Session->SetDataSource(kDataSource);
-  LoggingPlugin::Session->SetVehicleCategory(vinfo.mVehicleClass);
-  LoggingPlugin::Session->SetNumberOfSectors(krFactorNumberOfSectors);
+  mSession->SetUser(vinfo.mDriverName);
+  mSession->SetVehicle(vinfo.mVehicleName);
+  mSession->SetTrack(info.mTrackName);
+  mSession->SetDataSource(kDataSource);
+  mSession->SetVehicleCategory(vinfo.mVehicleClass);
+  mSession->SetNumberOfSectors(krFactorNumberOfSectors);
 }
 
 std::string LoggingPlugin::formatFileName(std::string format, 
@@ -473,157 +455,158 @@ std::string LoggingPlugin::formatFileName(std::string format,
 // the configuration file OpenMotorsport.xml
 void LoggingPlugin::CreateLoggingSession()
 {
-  LoggingPlugin::Session = new OpenMotorsport::Session();
+  mSession = new OpenMotorsport::Session();
   int channelID = 0;
 
+  // Group: Acceleration
+  mSession->AddChannel(
+    OpenMotorsport::Channel(
+      channelID++, 
+      kChannelAccelerationX, 
+      mSamplingInterval, 
+      kUnitsGee, 
+      kGroupAcceleration
+    )
+  );
+
+  mSession->AddChannel(
+    OpenMotorsport::Channel(
+      channelID++, 
+      kChannelAccelerationY, 
+      mSamplingInterval, 
+      kUnitsGee, 
+      kGroupAcceleration
+    )
+  );
+
+  mSession->AddChannel(
+    OpenMotorsport::Channel(
+      channelID++, 
+      kChannelAccelerationZ,
+      mSamplingInterval, 
+      kUnitsGee, 
+      kGroupAcceleration
+    )
+  );
+
   // Group: Position
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelSpeed, 
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsKPH, 
       kGroupPosition
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
-    OpenMotorsport::Channel(
-      channelID++, 
-      kChannelAccelerationX, 
-      LoggingPlugin::mSamplingInterval, 
-      kUnitsGee, 
-      kGroupPosition
-    )
-  );
-
-  LoggingPlugin::Session->AddChannel(
-    OpenMotorsport::Channel(
-      channelID++, 
-      kChannelAccelerationY, 
-      LoggingPlugin::mSamplingInterval, 
-      kUnitsGee, 
-      kGroupPosition
-    )
-  );
-
-  LoggingPlugin::Session->AddChannel(
-    OpenMotorsport::Channel(
-      channelID++, 
-      kChannelAccelerationZ,
-      LoggingPlugin::mSamplingInterval, 
-      kUnitsGee, 
-      kGroupPosition
-    )
-  );
-
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelPitch,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsDegrees, 
       kGroupPosition
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelRoll,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsDegrees, 
       kGroupPosition
     )
   );
 
   // Group: Driver
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelGear,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsGear, 
       kGroupDriver
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelThrottle,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsPercent, 
       kGroupDriver
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelBrake,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsPercent, 
       kGroupDriver
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelClutch,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsPercent, 
       kGroupDriver
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelSteering,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsPercent, 
       kGroupDriver
     )
   );
 
   // Group: Engine
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelRPM,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsRPM, 
       kGroupEngine
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelClutchRPM,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsRPM, 
       kGroupEngine
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelFuel,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsLitres, 
       kGroupEngine
     )
   );
 
-  LoggingPlugin::Session->AddChannel(
+  mSession->AddChannel(
     OpenMotorsport::Channel(
       channelID++, 
       kChannelOverheating,
-      LoggingPlugin::mSamplingInterval, 
+      mSamplingInterval, 
       kUnitsBoolean, 
       kGroupEngine
     )
@@ -632,101 +615,101 @@ void LoggingPlugin::CreateLoggingSession()
   // Group: Wheels
   for( long i = 0; i < kNumberOfWheels; ++i )
   {
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelRotation,
-        LoggingPlugin::mSamplingInterval, 
+        mSamplingInterval, 
         kUnitsRadiansPerSecond, 
         kWheels[i]
       )
     ); 
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelSuspensionDeflection,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsMeters, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelRideHeight,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsMeters, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelTireLoad,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsNewtons, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelLateralForce,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsNewtons, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelBrakeTemperature,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsCelcius, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelPressure,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsPascal, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelTemperatureLeft,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsCelcius, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelTemperatureCenter,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsCelcius, 
         kWheels[i]
       )
     );
 
-    LoggingPlugin::Session->AddChannel(
+    mSession->AddChannel(
       OpenMotorsport::Channel(
         channelID++, 
         kChannelTemperatureRight,
-        LoggingPlugin::mSamplingInterval,
+        mSamplingInterval,
         kUnitsCelcius, 
         kWheels[i]
       )
