@@ -45,6 +45,7 @@
 #define kChannelPitch "Pitch"
 #define kChannelRoll "Roll"
 #define kChannelTime "Time"
+#define kChannelDistance "Distance"
 
 #define kGroupAcceleration "Acceleration"
 #define kChannelAccelerationX "Acceleration X"

@@ -128,6 +128,9 @@ relative to each other (as shown in game).
 #define SEC_TO_MS(x) (int) (x * 1000)
 #define MS_TO_SEC(x) (float) x / 1000
 
+// Copy an instance of TelemVect3 from src to dest
+#define COPY_VECT3(src, dest) dest.x = src.x; dest.y = src.y; dest.z = src.z;
+
 /****************************************************************************/
 /* LoggingPlugin definition.                                                */
 /****************************************************************************/
@@ -172,6 +175,9 @@ void LoggingPlugin::startLogging(const TelemInfoV2 &info)
   mEnterLapNumber = info.mLapNumber;
   mTimeSinceLastSample = 0.0f;
   mIsLogging = true;
+  mHasPreviousPosition = false;
+  mPreviousPosition.x = mPreviousPosition.y = mPreviousPosition.z = 0;
+  mCumulativeDistance = 0.0f;
 
   LoggingPlugin::CreateLoggingSession();
   SampleBlock(info);
@@ -230,6 +236,17 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
   );
   roll = RAD_TO_DEG(roll);
 
+  // Calculate cumulative distance (Cartesian distance)
+  if(mHasPreviousPosition) {
+    mCumulativeDistance += sqrtf(
+      pow(mPreviousPosition.x - info.mPos.x, 2) +
+      pow(mPreviousPosition.y - info.mPos.y, 2) +
+      pow(mPreviousPosition.z - info.mPos.z, 2)
+    );
+  }
+  COPY_VECT3(info.mPos, mPreviousPosition);
+  mHasPreviousPosition = true;
+
   // Group: Acceleration
   mSession->GetChannel(kChannelAccelerationX, kGroupAcceleration)
     .GetDataBuffer().Write(info.mLocalAccel.x);
@@ -246,7 +263,9 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
   mSession->GetChannel(kChannelRoll, kGroupPosition).
     GetDataBuffer().Write(roll);
   mSession->GetChannel(kChannelTime, kGroupPosition).
-    GetDataBuffer().Write(mTotalElapsed);
+    GetDataBuffer().Write(SEC_TO_MS(mTotalElapsed));
+  mSession->GetChannel(kChannelDistance, kGroupPosition).
+    GetDataBuffer().Write(mCumulativeDistance);
 
   // Group: Driver
   mSession->GetChannel(kChannelGear, kGroupDriver)
@@ -531,6 +550,16 @@ void LoggingPlugin::CreateLoggingSession()
       mSamplingInterval, 
       kUnitsMilliseconds, 
       kGroupPosition
+    )
+  );
+
+  mSession->AddChannel(
+    OpenMotorsport::Channel(
+    channelID++, 
+    kChannelDistance,
+    mSamplingInterval, 
+    kUnitsMeters, 
+    kGroupPosition
     )
   );
 

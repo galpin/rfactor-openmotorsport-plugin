@@ -123,6 +123,9 @@ private:
   float mTotalElapsed;
   float mFirstLapET;
 
+  bool mHasPreviousPosition;
+  TelemVect3 mPreviousPosition;
+  float mCumulativeDistance;
 private:
   void stopLogging();
   void startLogging(const TelemInfoV2 &info);
