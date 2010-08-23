@@ -125,7 +125,7 @@ relative to each other (as shown in game).
 #define RAD_TO_DEG(x)  x * 57.296f;
 
 // Convert sectors to milliseconds
-#define SEC_TO_MS(x) (int) x * 1000
+#define SEC_TO_MS(x) (int) (x * 1000)
 #define MS_TO_SEC(x) (float) x / 1000
 
 /****************************************************************************/
@@ -174,6 +174,7 @@ void LoggingPlugin::startLogging(const TelemInfoV2 &info)
   mIsLogging = true;
 
   LoggingPlugin::CreateLoggingSession();
+  SampleBlock(info);
 }
 
 void LoggingPlugin::stopLogging()
@@ -244,6 +245,8 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
     .GetDataBuffer().Write(pitch);
   mSession->GetChannel(kChannelRoll, kGroupPosition).
     GetDataBuffer().Write(roll);
+  mSession->GetChannel(kChannelTime, kGroupPosition).
+    GetDataBuffer().Write(mTotalElapsed);
 
   // Group: Driver
   mSession->GetChannel(kChannelGear, kGroupDriver)
@@ -517,6 +520,16 @@ void LoggingPlugin::CreateLoggingSession()
       kChannelRoll,
       mSamplingInterval, 
       kUnitsDegrees, 
+      kGroupPosition
+    )
+  );
+
+  mSession->AddChannel(
+    OpenMotorsport::Channel(
+      channelID++, 
+      kChannelTime,
+      mSamplingInterval, 
+      kUnitsMilliseconds, 
       kGroupPosition
     )
   );

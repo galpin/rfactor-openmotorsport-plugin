@@ -38,11 +38,13 @@
 #define kUnitsNewtons "n"
 #define kUnitsRadiansPerSecond "rad/sec"
 #define kUnitsPascal "pa"
+#define kUnitsMilliseconds "ms"
 
 #define kGroupPosition "Position"
 #define kChannelSpeed "Speed"
 #define kChannelPitch "Pitch"
 #define kChannelRoll "Roll"
+#define kChannelTime "Time"
 
 #define kGroupAcceleration "Acceleration"
 #define kChannelAccelerationX "Acceleration X"
