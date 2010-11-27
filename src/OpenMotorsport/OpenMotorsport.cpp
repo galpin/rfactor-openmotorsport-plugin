@@ -26,6 +26,7 @@
 #include "OpenMotorsport.hpp"
 #include "tinyxml.h"
 #include "zip.h"
+#include "Utilities.hpp"
 
 // xmlns namespace for meta.xml
 #define kXmlBaseNamespace "http://66laps.org/ns/openmotorsport-1.0"
@@ -96,15 +97,6 @@ namespace OpenMotorsport
     }
   }
 
-  const std::string Session::GetISO8601Date() const
-  {
-    char* buf = new char[80]; // magic number, 80 is enough for an ISO-8601 date
-    strftime(buf, 80, "%Y-%m-%dT%H:%M:%S", mDate);
-    std::string str(buf);
-    delete [] buf;
-    return str;
-  }
-
   void Session::AddChannel(Channel& channel)
   {
     std::string key = channel.GetName() + "/" + channel.GetGroup();
@@ -171,7 +163,7 @@ namespace OpenMotorsport
     venue->LinkEndChild(node);
 
     node = new TiXmlElement("date");
-    node->LinkEndChild(new TiXmlText(this->GetISO8601Date().c_str()));
+    node->LinkEndChild(new TiXmlText(GetISO8601Date(this->mDate).c_str()));
     metadata->LinkEndChild(node);
 
     node = new TiXmlElement("datasource");

@@ -285,11 +285,6 @@ namespace OpenMotorsport
     const std::string& GetDataSource() const { return mDataSource; }
 
     /**
-     * @return The date of this session as an ISO-8601 compatiable string.
-     */
-    const std::string GetISO8601Date() const;
-
-    /**
      * @return The date of this session.
      */
     const struct tm* GetDate() const { return mDate; }
