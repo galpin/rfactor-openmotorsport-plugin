@@ -178,6 +178,10 @@ namespace OpenMotorsport
     node->LinkEndChild(new TiXmlText(this->mDataSource.c_str()));
     metadata->LinkEndChild(node);
 
+    node = new TiXmlElement("comments");
+    node->LinkEndChild(new TiXmlText(this->mComments.c_str()));
+    metadata->LinkEndChild(node);
+
     // write <channels>
     TiXmlElement* channels = new TiXmlElement("channels");
     root->LinkEndChild(channels);

@@ -294,6 +294,16 @@ namespace OpenMotorsport
      */
     const struct tm* GetDate() const { return mDate; }
 
+    /**
+     * @param comments A textual comment about this session.
+     */
+    void SetComment(const std::string comments) { mComments = comments; }
+
+    /**
+     * @return A textual comment about this session.
+     */
+    const std::string& GetComment() const { return mComments; }
+
   private:
     void _createChannelXmlNode(const OpenMotorsport::Channel& channel, TiXmlElement* parent) const;
     TiXmlElement* Session::_createGroupXmlNode(const std::string& name, TiXmlElement* parent) const;
@@ -312,6 +322,7 @@ namespace OpenMotorsport
     std::string mVehicleCategory;
     std::string mTrackName;
     std::string mDataSource;
+    std::string mComments;
     struct tm* mDate;
   };
 }
