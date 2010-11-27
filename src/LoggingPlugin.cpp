@@ -89,6 +89,16 @@ relative to each other (as shown in game).
 #define kGamePhaseSessionStopped 7
 #define kGamePhaseSessionOver 8
 
+// Constants for the ScoringInfo.mSession (see InternalsPlugin.hpp)
+#define kSessionTesting 0
+#define kSessionPractice 1
+#define kSessionQualifying 5
+#define kSessionWarmup 6
+#define kSessionRace 7
+static std::string kSessions[] = {
+  "Testing", "Practice", "", "", "", "Qualifying", "Warmup", "Race"
+};
+
 // Constants for the TelemWheel.mTemperature array (see InternalsPlugin.hpp)
 #define kWheelTemperatureLeft 0
 #define kWheelTemperatureCenter 1
@@ -127,6 +137,7 @@ relative to each other (as shown in game).
 // Convert sectors to milliseconds
 #define SEC_TO_MS(x) (int) (x * 1000)
 #define MS_TO_SEC(x) (float) x / 1000
+#define MSMS_TO_G(x) x * 0.101971621
 
 // Copy an instance of TelemVect3 from src to dest
 #define COPY_VECT3(src, dest) dest.x = src.x; dest.y = src.y; dest.z = src.z;
@@ -249,11 +260,11 @@ void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
 
   // Group: Acceleration
   mSession->GetChannel(kChannelAccelerationX, kGroupAcceleration)
-    .GetDataBuffer().Write(info.mLocalAccel.x);
+    .GetDataBuffer().Write(MSMS_TO_G(info.mLocalAccel.x));
   mSession->GetChannel(kChannelAccelerationY, kGroupAcceleration)
-    .GetDataBuffer().Write(info.mLocalAccel.y);
+    .GetDataBuffer().Write(MSMS_TO_G(info.mLocalAccel.y));
   mSession->GetChannel(kChannelAccelerationZ, kGroupAcceleration)
-    .GetDataBuffer().Write(info.mLocalAccel.z);
+    .GetDataBuffer().Write(MSMS_TO_G(info.mLocalAccel.z));
 
   // Group: Position
   mSession->GetChannel(kChannelSpeed, kGroupPosition)
@@ -440,13 +451,15 @@ void LoggingPlugin::saveSectorTime(const ScoringInfoV2& info,
 }
 
 void LoggingPlugin::saveMetadata(const ScoringInfoV2& info,
-                                 const VehicleScoringInfoV2& vinfo) {
+                                 const VehicleScoringInfoV2& vinfo) 
+{
   mSession->SetUser(vinfo.mDriverName);
   mSession->SetVehicle(vinfo.mVehicleName);
   mSession->SetTrack(info.mTrackName);
   mSession->SetDataSource(kDataSource);
   mSession->SetVehicleCategory(vinfo.mVehicleClass);
   mSession->SetNumberOfSectors(krFactorNumberOfSectors);
+  mSession->SetComment(kSessions[info.mSession]);
 }
 
 std::string LoggingPlugin::formatFileName(std::string format, 
