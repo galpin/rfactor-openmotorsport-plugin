@@ -23,10 +23,13 @@
 #include "OpenMotorsport.hpp"
 #include "ChannelDefinitions.hpp"
 #include "Configuration.hpp"
+#include "Utilities.hpp"
 
 #include <math.h>
 #include <windows.h>
 #include <sstream>
+#include <fstream>
+#include <ctime>
 
 /*
 A few notes on when we start logging data.
@@ -142,6 +145,9 @@ static std::string kSessions[] = {
 // Copy an instance of TelemVect3 from src to dest
 #define COPY_VECT3(src, dest) dest.x = src.x; dest.y = src.y; dest.z = src.z;
 
+// Log file path
+#define LOG_PATH "OpenMotorsport.log"
+
 /****************************************************************************/
 /* LoggingPlugin definition.                                                */
 /****************************************************************************/
@@ -157,6 +163,7 @@ void LoggingPlugin::Startup()
   mSamplingInterval = 
         mConfiguration->GetInt(kConfigurationSampleInterval);
   mSamplingIntervalSeconds = MS_TO_SEC(mSamplingInterval);
+  log("Startup");
 }
 
 void LoggingPlugin::Destroy()
@@ -192,6 +199,8 @@ void LoggingPlugin::startLogging(const TelemInfoV2 &info)
 
   LoggingPlugin::CreateLoggingSession();
   SampleBlock(info);
+
+  log("Started logging");
 }
 
 void LoggingPlugin::stopLogging()
@@ -201,6 +210,8 @@ void LoggingPlugin::stopLogging()
   mSession = NULL;
   delete mSession;
   mEnterPhase = kGamePhaseNotEnteredGame;
+  
+  log("Stopped logging");
 }
 
 bool LoggingPlugin::isCurrentlyLogging()
@@ -217,14 +228,14 @@ void LoggingPlugin::saveSession()
   path << formatFileName(mConfiguration->GetString(kConfigurationFilename), 
     mSession);
 
-  FILE* fo = fopen("error_log.txt", "a");
   try {
     mSession->Write(path.str());
   }
   catch (const char* e) {
-    fprintf(fo, "Exception when attempting to write file: %s\n", e);
+    std::string message = 
+      "Exception when attempting to write file: " + std::string(e);
+    log(message, LOG_ERROR);
   }
-  fclose(fo);
 }
 
 void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
@@ -485,6 +496,33 @@ std::string LoggingPlugin::formatFileName(std::string format,
   replace(format, "%t", session->GetTrack());
   replace(format, "%d", session->GetUser());
   return format;
+}
+
+void LoggingPlugin::log(std::string message, short level)
+{
+  std::ofstream out;
+  out.open(LOG_PATH, std::ofstream::app | std::ofstream::out);
+  if(out.is_open()) {
+    time_t rawtime;
+    time ( &rawtime );
+    struct tm* date = localtime ( &rawtime );
+    
+    std::string prefix;
+    switch(level) {
+    case LOG_INFO:
+      prefix = "INFO";
+      break;
+    case LOG_WARN:
+      prefix = "WARN";
+      break;
+    case LOG_ERROR:
+      prefix = "ERROR";
+      break;
+    }
+
+    out << prefix << "(" << GetISO8601Date(date) << "): " << message << std::endl;
+    out.close();
+  }
 }
 
 // Long method to create channels. Ultimately this should be externalised into

@@ -27,6 +27,10 @@
 
 namespace OpenMotorsport { class Session; }
 
+#define LOG_INFO 0
+#define LOG_ERROR 1
+#define LOG_WARN 2
+
 /**
  * rFactor Plugin.
  */
@@ -138,6 +142,8 @@ private:
 
   std::string LoggingPlugin::formatFileName(std::string format, 
                                             OpenMotorsport::Session* session);
+
+  void log(std::string message, short level = LOG_INFO);
 };
 
 /**
