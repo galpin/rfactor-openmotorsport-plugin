@@ -22,6 +22,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <time.h> 
+#include <sstream>
 
 #include "OpenMotorsport.hpp"
 #include "tinyxml.h"
@@ -45,7 +46,8 @@ namespace OpenMotorsport
     mFullName(kSessionNoUser),
     mTrackName(kSessionNoTrackName),
     mVehicleName(kSessionNoVehicleName),
-    mDataSource(kSessionNoDataSource)
+    mDataSource(kSessionNoDataSource),
+    mDuration(kSessionNoSampleDuration)
   {
     // Initialise default date
     time_t rawtime;
@@ -173,6 +175,13 @@ namespace OpenMotorsport
     node = new TiXmlElement("comments");
     node->LinkEndChild(new TiXmlText(this->mComments.c_str()));
     metadata->LinkEndChild(node);
+
+    if(this->mDuration != kSessionNoSampleDuration) {
+      node = new TiXmlElement("duration");
+      std::stringstream stream;
+      stream << this->mDuration;
+      node->LinkEndChild(new TiXmlText(stream.str().c_str()));
+    }
 
     // write <channels>
     TiXmlElement* channels = new TiXmlElement("channels");

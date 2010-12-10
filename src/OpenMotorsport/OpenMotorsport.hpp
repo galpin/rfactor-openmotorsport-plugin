@@ -36,6 +36,7 @@
 #define kSessionNoTrackName "No Track"
 #define kSessionNoDataSource ""
 #define kSessionNoSectors -1
+#define kSessionNoSampleDuration -1
 
 class TiXmlElement;
 
@@ -154,11 +155,11 @@ namespace OpenMotorsport
      */
     OpenMotorsport::DataBuffer& GetDataBuffer() { return mDataBuffer; }
   private:
-	  int mId;
-	  std::string mName;
-	  std::string mGroup;
+	int mId;
+	std::string mName;
+	std::string mGroup;
     std::string mUnits;
-	  long mSampleInterval;
+	long mSampleInterval;
     DataBuffer mDataBuffer;
   };
  
@@ -299,6 +300,16 @@ namespace OpenMotorsport
      */
     const std::string& GetComment() const { return mComments; }
 
+    /**
+     * @return The total sampling duration.
+     */
+    const float GetDuration() const { return mDuration; }
+
+    /**
+     " @param The total sample duration.
+     */
+    void SetDuration(float duration) { mDuration = duration; }
+
   private:
     void _createChannelXmlNode(const OpenMotorsport::Channel& channel, TiXmlElement* parent) const;
     TiXmlElement* Session::_createGroupXmlNode(const std::string& name, TiXmlElement* parent) const;
@@ -319,6 +330,8 @@ namespace OpenMotorsport
     std::string mDataSource;
     std::string mComments;
     struct tm* mDate;
+
+    float mDuration;
   };
 }
 

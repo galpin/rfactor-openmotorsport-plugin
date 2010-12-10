@@ -227,6 +227,8 @@ void LoggingPlugin::saveSession()
     return;
   }
 
+  mSession->SetDuration(mTotalElapsed);
+
   std::stringstream path;
   path << mConfiguration->GetString(kConfigurationOutputDirectory);
   CreateDirectory(path.str().c_str(), NULL);
