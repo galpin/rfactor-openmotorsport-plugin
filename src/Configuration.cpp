@@ -33,6 +33,7 @@ Configuration::Configuration(void)
   mConfiguration[kConfigurationSampleInterval] = kDefaultSampleInterval;
   mConfiguration[kConfigurationOutputDirectory] = kDefaultOutputDirectory;
   mConfiguration[kConfigurationFilename] = kDefaultFilename;
+  mConfiguration[kConfigurationRequireOneLap] = kDefaultRequireOneLap;
 }
 
 Configuration::~Configuration(void)
@@ -49,6 +50,11 @@ const int Configuration::GetInt(std::string key)
   int result;
   stream >> result;
   return result;
+}
+
+const bool Configuration::GetBool(std::string key)
+{
+  return mConfiguration[key] == "True" || mConfiguration[key] == "true";
 }
 
 void Configuration::Read(std::string filename)

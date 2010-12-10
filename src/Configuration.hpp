@@ -26,11 +26,13 @@
 #define kConfigurationSampleInterval "SamplingInterval"
 #define kConfigurationOutputDirectory "OutputDirectory"
 #define kConfigurationFilename "Filename"
+#define kConfigurationRequireOneLap "RequireOneLap"
 
 #define kDefaultFilename "%Y%M%D%H%M_%d_%c_%t.om"
 #define kDefaultSampleInterval "200"
 #define kDefaultOutputDirectory ".\\UserData\\LOG\\OpenMotorsport\\"
 #define kDefaultConfigurationFile "OpenMotorsport.xml"
+#define kDefaultRequireOneLap "True"
 
 #include <string>
 #include <unordered_map>
@@ -51,6 +53,7 @@ public:
 
   const std::string& GetString(std::string key);
   const int GetInt(std::string key);
+  const bool GetBool(std::string key);
 private:
   typedef std::tr1::unordered_map<std::string, std::string> ConfigurationMap;
   ConfigurationMap mConfiguration;

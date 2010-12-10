@@ -24,4 +24,9 @@
     The default format allows for natural ordering by filename.
   -->
   <option key="Filename" value="%Y%M%D%H%M_%d_%c_%t.om" />  
+  
+  <!--
+	Require at least one lap before saving logged data.
+  -->
+  <option key="RequireOneLap" value="True" />  
 </configuration>

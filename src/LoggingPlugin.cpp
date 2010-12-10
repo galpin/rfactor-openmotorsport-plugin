@@ -191,6 +191,7 @@ void LoggingPlugin::startLogging(const TelemInfoV2 &info)
   mTotalElapsed = 0.0f;
   mFirstLapET = 0.0f;
   mEnterLapNumber = info.mLapNumber;
+  mCurrentLapNumber = info.mLapNumber;
   mTimeSinceLastSample = 0.0f;
   mIsLogging = true;
   mHasPreviousPosition = false;
@@ -221,6 +222,11 @@ bool LoggingPlugin::isCurrentlyLogging()
 
 void LoggingPlugin::saveSession()
 {
+  if(mConfiguration->GetBool(kConfigurationRequireOneLap) &&
+      (mCurrentLapNumber - mEnterLapNumber) < 1) {
+    return;
+  }
+
   std::stringstream path;
   path << mConfiguration->GetString(kConfigurationOutputDirectory);
   CreateDirectory(path.str().c_str(), NULL);
@@ -240,6 +246,8 @@ void LoggingPlugin::saveSession()
 
 void LoggingPlugin::SampleBlock(const TelemInfoV2& info)
 {
+  mCurrentLapNumber = info.mLapNumber;
+
   // Compute some auxiliary info based on the above (vectors from ISI code)
   float speed = SPEED_MPS(info.mLocalVel);
   TelemVect3 forwardVector = { -info.mOriX.z, -info.mOriY.z, -info.mOriZ.z };

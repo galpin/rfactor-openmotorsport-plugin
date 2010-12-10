@@ -116,6 +116,7 @@ private:
   unsigned char mEnterPhase;
   unsigned char mCurrentPhase;
   int mEnterLapNumber;
+  int mCurrentLapNumber;
   bool mSavedMetaData;
   bool mIsLogging;
 
