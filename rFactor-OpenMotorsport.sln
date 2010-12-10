@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rFactor-OpenMotorsport", "rFactor-OpenMotorsport.vcproj", "{D0C09F9B-E1D6-4A04-B698-190F52BBA156}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rFactor-Plugin", "rFactor-OpenMotorsport.vcxproj", "{D0C09F9B-E1D6-4A04-B698-190F52BBA156}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
